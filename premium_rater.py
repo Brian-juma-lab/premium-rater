@@ -6,30 +6,40 @@
 import streamlit as st
 import pandas as pd
 from PIL import Image
+import os
 
 # --- APP CONFIG ---
 st.set_page_config(page_title="Platinum Life Premium Calculator", layout="wide")
 
+# --- DETERMINE FILE PATHS ---
+# Use relative paths to work both locally and on Streamlit Cloud
+base_path = os.path.dirname(__file__)
+data_path = os.path.join(base_path, "Per Mille rates data_v1.xlsx")
+logo_path = os.path.join(base_path, "Company logo.png")
+
 # --- LOAD DATA ---
-data_path = r"\\cfclfs\users\brian.juma\My Documents\Per Mille rates data_v1.xlsx"
-df = pd.read_excel(data_path)
+try:
+    df = pd.read_excel(data_path)
+except FileNotFoundError:
+    st.error("❌ Could not find 'Per Mille rates data_v1.xlsx'. Please ensure it's in the same folder as this script.")
+    st.stop()
 
 # --- HEADER SECTION WITH LOGO TOP RIGHT ---
 col1, col2 = st.columns([4, 1])
 with col1:
     st.markdown(
         """
-        <h1 style='color:#003366;'>
-            Platinum Life Premium Calculator
-        </h1>
+        <h1 style='color:#003366;'>Platinum Life Premium Calculator</h1>
         <hr style='border: 2px solid #FFD700; border-radius: 10px;'>
         """,
         unsafe_allow_html=True
     )
 with col2:
-    logo_path = r"C:\Users\brian.juma\Pictures\Company logo.png"
-    logo = Image.open(logo_path)
-    st.image(logo, use_container_width=True)
+    try:
+        logo = Image.open(logo_path)
+        st.image(logo, width='stretch')
+    except FileNotFoundError:
+        st.warning("⚠️ Company logo not found. Please ensure 'Company logo.png' is in the same folder.")
 
 # --- CLIENT DETAILS FORM ---
 st.subheader("🧾 Client Details")
@@ -39,7 +49,12 @@ age = st.number_input("Age (18–55)", min_value=18, max_value=55, step=1)
 gender = st.selectbox("Gender", ["Male", "Female"])
 smoker = st.selectbox("Smoker Status", ["Smoker", "Non Smoker"])
 education = st.selectbox("Education Level", ["Tertiary", "Non Tertiary"])
-sum_assured = st.number_input("Sum Assured (1,000,000 – 35,000,000)", min_value=1_000_000, max_value=35_000_000, step=100_000)
+sum_assured = st.number_input(
+    "Sum Assured (1,000,000 – 35,000,000)",
+    min_value=1_000_000,
+    max_value=35_000_000,
+    step=100_000
+)
 
 # --- CALCULATE BUTTON ---
 if st.button("💰 Calculate Premium"):
@@ -67,7 +82,7 @@ if st.button("💰 Calculate Premium"):
         # --- CALCULATIONS ---
         base_premium = (per_mille_rate / 1000) * sum_assured
         phcf = 0.0025 * base_premium  # 0.25%
-        stamp_duty = 40  # Fixed amount
+        stamp_duty = 40  # Fixed
         total_premium = base_premium + phcf + stamp_duty
 
         # --- OUTPUT SECTION ---
